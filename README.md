@@ -1,55 +1,203 @@
 # OS Observatory
 
-A local-first live system monitor built with Flask, psutil and Prometheus, with a self-contained canvas-chart UI and Grafana dashboard. It reports measured OS values only; the UI reports measured OS values only.
+A real-time system monitoring dashboard. It samples live OS metrics with `psutil`, shows them in a web UI, raises threshold-based alerts, exports Prometheus metrics, and ships with a Grafana dashboard and bounded stress tests for generating load.
 
-## Run with Docker (recommended for the bundled dashboards)
+## Features
 
-1. Install and start Docker Desktop / Docker Engine.
-2. From this folder run `docker compose up --build -d` (or double-click `start.bat` on Windows).
-3. Open the UI at http://localhost:5050, Grafana at http://localhost:3000 and Prometheus targets at http://localhost:9090/targets.
-4. Check `docker compose ps` for health status. The app health endpoint is http://localhost:5050/healthz. The Prometheus target should be UP.
+- **Live metrics:** CPU (total, per-core, mode split), memory, swap, disk I/O, network throughput, context switches, interrupts, process/thread counts, load average, uptime
+- **Process tables:** top processes by CPU and memory (RSS)
+- **Alerts:** CPU saturation, memory pressure, thrashing, memory growth (leak heuristic), high context switches, heavy disk I/O, low disk space
+- **Built-in stress tests:** CPU, memory and disk, triggered from the UI or API, with size and time limits
+- **Prometheus + Grafana:** pre-provisioned datasource and dashboard
+- **Tests and CI:** pytest suite and GitHub Actions workflow
 
-Ports are bound to `127.0.0.1` by default. Grafana admin password is configured with `GRAFANA_ADMIN_PASSWORD`; set it in your shell or a local `.env` file before starting. The default is `change-me-now`, so change it before use. Grafana anonymous viewing is enabled for the local dashboard. Stop with `stop.bat` or `docker compose down`.
+## Project layout
 
-## Run natively without Docker
+```
+app.py            Flask app, sampling loop, API, Prometheus exporter
+collector.py      Metric collection, environment detection, rate calculations
+alerts.py         Alert thresholds and memory-growth detection
+stress.py         Stress-test subprocess manager (limits, timeouts, stop)
+experiments/      cpu_burn.py, memory_leak.py, disk_stress.py
+static/           Web UI (index.html)
+prometheus/       Prometheus config
+grafana/          Dashboard JSON and provisioning
+tests/            Pytest tests
+METRICS.md        Metric definitions, verification methods, limitations
+```
 
-- Windows: double-click `run-native.bat`.
-- Linux/macOS: run `./run-native.sh`.
-- Manual alternative: `python -m venv .venv`, activate it, `pip install -r requirements.txt`, then `python app.py`.
+## Quick start (Docker)
 
-The native server binds to `127.0.0.1` by default. UI is `http://127.0.0.1:5050`; Prometheus metrics are at `http://127.0.0.1:8000/metrics` when enabled.
+```bash
+docker compose up --build -d
+```
+
+| Service            | URL                              |
+| ------------------ | -------------------------------- |
+| Observatory UI     | http://localhost:5050            |
+| Grafana            | http://localhost:3000            |
+| Prometheus targets | http://localhost:9090/targets    |
+| App health         | http://localhost:5050/healthz    |
+| Prometheus metrics | http://localhost:8000/metrics    |
+
+All ports bind to `127.0.0.1` only.
+
+Set the Grafana admin password before use, via your environment or a `.env` file:
+
+```
+GRAFANA_ADMIN_PASSWORD=your-strong-password
+```
+
+The default is `change-me-now`. Change it.
+
+Stop everything:
+
+```bash
+docker compose down
+```
+
+## Run natively (no Docker)
+
+**Windows:** double-click `run-native.bat`
+
+**Linux / macOS:**
+
+```bash
+chmod +x run-native.sh
+./run-native.sh
+```
+
+**Manually:**
+
+```bash
+python -m venv .venv
+# activate: .venv\Scripts\activate (Windows) or source .venv/bin/activate (Linux/macOS)
+pip install -r requirements.txt
+python app.py
+```
+
+UI: http://localhost:5050
+
+> **Docker vs native:** Docker only sees its own Linux container (on Windows, a Linux VM), not the full host. For real host CPU, RAM, processes and disks, run natively.
+
+## Stress testing
+
+### Option 1: Built-in stress tester (UI)
+
+Open the UI and use the stress-test controls to start a CPU, memory or disk test. Only one test runs at a time, and you can stop it at any point.
+
+Limits enforced by the app:
+
+| Test   | Parameters                                   |
+| ------ | -------------------------------------------- |
+| CPU    | Duration 1–120 s                             |
+| Memory | Size 16–2048 MB                              |
+| Disk   | Duration 1–120 s, file size 8–1024 MB        |
+
+API equivalents:
+
+```
+POST /api/stress/cpu      {"duration": 30}
+POST /api/stress/memory   {"size_mb": 256}
+POST /api/stress/disk     {"duration": 30, "size_mb": 128}
+POST /api/stress/stop
+GET  /api/stress/status
+```
+
+Set `ENABLE_STRESS=0` to disable the built-in tester.
+
+### Option 2: Manual stress test (if the built-in tester can't be used)
+
+If the UI/API tester is disabled or unavailable, run the experiment scripts directly inside the container:
+
+```bash
+# CPU: burn all cores for 60 seconds
+docker exec -it os-observatory-app python experiments/cpu_burn.py 60
+
+# Memory: gradually allocate up to 600 MB (simulates a leak)
+docker exec -it os-observatory-app python experiments/memory_leak.py 600
+
+# Disk: sustained read/write I/O for 40 seconds
+docker exec -it os-observatory-app python experiments/disk_stress.py 40
+```
+
+Arguments:
+
+| Script           | Arguments                              | Defaults       | Limits                    |
+| ---------------- | -------------------------------------- | -------------- | ------------------------- |
+| `cpu_burn.py`    | `[seconds]`                            | 30 s           | 1–120 s                   |
+| `memory_leak.py` | `[megabytes]`                          | 256 MB         | 16–2048 MB                |
+| `disk_stress.py` | `[seconds] [file_size_mb]`             | 30 s, 128 MB   | 1–120 s, 8–1024 MB        |
+
+Notes:
+
+- `memory_leak.py` allocates 16 MB every 2 seconds, then holds the memory for about 45 seconds before releasing it.
+- `disk_stress.py` writes to a temporary file and deletes it on exit.
+- Press `Ctrl+C` to stop any script early. All three clean up after themselves.
+- Running natively? Use the same scripts without `docker exec`, e.g. `python experiments/cpu_burn.py 60`.
+
+### What to watch
+
+| Test   | Where you should see it                                          | Expected alert                |
+| ------ | ---------------------------------------------------------------- | ----------------------------- |
+| CPU    | CPU chart, per-core view, top processes                          | `cpu_saturation` (after 10 s above 90%) |
+| Memory | Memory chart, process RSS                                        | `memory_leak` (≥ 80 MB growth over 40 s) |
+| Disk   | Disk read/write chart                                            | `heavy_disk_io` (≥ 20 MB/s for 10 s) |
+
+Cross-check against `docker stats` (or Task Manager / `top` when running natively). See `METRICS.md` for how each metric is calculated and verified.
 
 ## Configuration
 
-| Variable | Default | Purpose |
-|---|---:|---|
-| `UI_PORT` | `5050` | Flask UI/API port |
-| `METRICS_PORT` | `8000` | Prometheus exporter port |
-| `SAMPLE_INTERVAL` | `5` | Sampling interval in seconds |
-| `ENABLE_METRICS` | `1` | Set `0` to disable Prometheus exporter |
-| `ENABLE_STRESS` | `1` | Set `0` to disable stress-test endpoints |
-| `SHOW_PROCESS_NAMES` | Native `1`, Docker `0` | Reveal process names in UI/API |
-| `GRAFANA_ADMIN_PASSWORD` | `change-me-now` | Grafana admin password in Docker |
-| `ALERT_CPU_PERCENT` | `90` | CPU saturation threshold |
-| `ALERT_CPU_DURATION_SECONDS` | `10` | Sustained CPU threshold duration |
-| `ALERT_MEMORY_PERCENT` | `90` | Memory pressure threshold |
-| `ALERT_SWAP_PERCENT` | `60` | Swap threshold for thrashing alert |
-| `ALERT_CONTEXT_SWITCHES_PER_S` | `150000` | Context switch threshold |
-| `ALERT_DISK_BYTES_PER_S` | `20971520` | Disk throughput threshold |
-| `ALERT_DISK_DURATION_SECONDS` | `10` | Sustained disk threshold duration |
-| `ALERT_DISK_USED_PERCENT` | `90` | Volume usage threshold |
-| `ALERT_LEAK_WINDOW_SECONDS` | `40` | Leak observation window |
-| `ALERT_LEAK_GROWTH_MB` | `80` | Required monotonic RSS growth |
+Set via environment variables (or `.env` for Docker Compose).
 
-The effective values are available at `/api/config`. Stress-test limits are enforced server-side: CPU and disk duration at most 120 seconds, memory at most 2048 MB, disk test file at most 1024 MB. Only one stress test can run at a time. **Stress tests really load or allocate resources in the machine/container.** Keep the UI local; Docker ports are loopback-bound by default.
+| Variable                       | Default    | Description                                   |
+| ------------------------------ | ---------- | --------------------------------------------- |
+| `UI_PORT`                      | 5050       | Web UI port                                   |
+| `METRICS_PORT`                 | 8000       | Prometheus metrics port                       |
+| `UI_HOST`                      | 127.0.0.1  | Bind address (native runs)                    |
+| `SAMPLE_INTERVAL`              | 5          | Seconds between samples (min 1)               |
+| `ENABLE_METRICS`               | 1          | Set `0` to disable the Prometheus exporter    |
+| `ENABLE_STRESS`                | 1          | Set `0` to disable built-in stress tests      |
+| `SHOW_PROCESS_NAMES`           | 0 in Docker, 1 native | Show process names in tables      |
+| `LOG_LEVEL`                    | INFO       | Logging level                                 |
+| `ALERT_CPU_PERCENT`            | 90         | CPU alert threshold (%)                       |
+| `ALERT_CPU_DURATION_SECONDS`   | 10         | Time CPU must stay above threshold            |
+| `ALERT_MEMORY_PERCENT`         | 90         | Memory alert threshold (%)                    |
+| `ALERT_SWAP_PERCENT`           | 60         | Swap threshold used for thrashing detection   |
+| `ALERT_CONTEXT_SWITCHES_PER_S` | 150000     | Context switch rate threshold                 |
+| `ALERT_DISK_BYTES_PER_S`       | 20971520   | Disk throughput threshold (bytes/s)           |
+| `ALERT_DISK_DURATION_SECONDS`  | 10         | Time disk must stay above threshold           |
+| `ALERT_DISK_USED_PERCENT`      | 90         | Volume usage threshold (%)                    |
+| `ALERT_LEAK_WINDOW_SECONDS`    | 40         | Window for memory-growth detection            |
+| `ALERT_LEAK_GROWTH_MB`         | 80         | Growth within window that triggers an alert   |
 
-## Honest scope and limitations
+Effective thresholds are available at `GET /api/config`.
 
-- Docker reports the Linux container environment (often a Docker Desktop Linux VM), not your complete Windows/macOS host. Run natively for host-level metrics.
-- psutil cannot guarantee access to every process or volume. Platform APIs expose different CPU modes, load averages, interrupt counters and swap semantics; unavailable data is omitted where appropriate.
-- Process names are shown only when enabled. No telemetry is sent and the UI has no external CDN dependencies.
-- The health score is a project-specific heuristic, not an OS standard. Leak detection indicates sustained RSS growth; it cannot prove a code-level memory leak.
+## API
 
-## Verification
+| Endpoint                 | Method | Description                  |
+| ------------------------ | ------ | ---------------------------- |
+| `/`                      | GET    | Web UI                       |
+| `/healthz`               | GET    | Health check                 |
+| `/api/status`            | GET    | Current metrics and alerts   |
+| `/api/history`           | GET    | Recent sample history        |
+| `/api/config`            | GET    | Effective configuration      |
+| `/api/stress/<kind>`     | POST   | Start `cpu`, `memory` or `disk` test |
+| `/api/stress/stop`       | POST   | Stop the running test        |
+| `/api/stress/status`     | GET    | Stress-test state            |
 
-Install dev dependency `pytest` and run `pytest -q` (or `make test`). `test-monitor.ps1` checks the main endpoints and metric response on a running instance. See [METRICS.md](METRICS.md) for every metric's source, verification method and limitations.
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q          # or: make test
+```
+
+CI runs the same tests via `.github/workflows/tests.yml`.
+
+## Known limitations
+
+- Inside Docker, metrics describe the container/VM environment, not the full host. Run natively for host-level data.
+- Memory-leak alerts are a heuristic (sustained monotonic RSS growth). They can't prove a software leak.
+- Some counters (interrupts, load average, disk I/O) aren't exposed on every platform and may be missing or zero.
+- Full details per metric are in [`METRICS.md`](METRICS.md).
