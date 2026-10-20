@@ -224,3 +224,7 @@ CI runs the same tests via `.github/workflows/tests.yml`.
 - Memory-leak alerts are a heuristic (sustained monotonic RSS growth). They can't prove a software leak.
 - Some counters (interrupts, load average, disk I/O) aren't exposed on every platform and may be missing or zero.
 - Full details per metric are in [`METRICS.md`](METRICS.md).
+
+
+Future Scope:
+make better UI current looks very vibecoded sigma
