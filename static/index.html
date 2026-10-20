@@ -1,154 +1,42 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OS Performance Observatory</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>OS Observatory</title>
 <style>
-:root{--bg:#f3f5f7;--panel:#fff;--line:#dbe1e8;--text:#1b2430;--mut:#5d6b7a;--acc:#2f6fed;--ok:#1b8a4b;--warn:#b86e00;--bad:#c93a3a;--okbg:#e6f4ec;--warnbg:#fbf0dc;--badbg:#fbe5e5}
-@media(prefers-color-scheme:dark){:root{--bg:#12171d;--panel:#1a2129;--line:#2c3743;--text:#e5ebf1;--mut:#92a0ae;--acc:#6b9bff;--ok:#4cc27d;--warn:#e3a33b;--bad:#ef6b6b;--okbg:#173225;--warnbg:#3a2d14;--badbg:#3c1d1d}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
-header{padding:20px 28px 0;max-width:1100px;margin:auto}
-h1{font-size:20px;margin:0 0 2px;font-weight:650}
-.sub{color:var(--mut);margin:0 0 14px}
-nav{display:flex;gap:4px;border-bottom:1px solid var(--line)}
-nav button{background:none;border:0;border-bottom:3px solid transparent;padding:9px 14px;font:inherit;color:var(--mut);cursor:pointer}
-nav button.on{color:var(--text);border-color:var(--acc);font-weight:600}
-nav button:focus-visible,button.run:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-main{max-width:1100px;margin:auto;padding:22px 28px 60px}
-.hero{display:grid;grid-template-columns:230px 1fr;gap:34px;align-items:start}
-.score{font-size:84px;line-height:1;font-weight:700;letter-spacing:-2px}
-.bar{height:8px;background:var(--line);border-radius:4px;margin:10px 0 6px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--ok);transition:width .4s,background .4s}
-.lbl{color:var(--mut);font-size:13px}
-h2{font-size:15px;margin:0 0 8px;font-weight:650}
-ul.msgs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-ul.msgs li{padding:10px 14px;border-radius:6px;border-left:5px solid;background:var(--panel)}
-li.ok{border-color:var(--ok);background:var(--okbg)}li.warn{border-color:var(--warn);background:var(--warnbg)}li.bad{border-color:var(--bad);background:var(--badbg)}li.info{border-color:var(--line)}
-.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.strip div{padding:14px 12px;border-right:1px solid var(--line)}.strip div:last-child{border:0}
-.strip b{display:block;font-size:24px;font-weight:650}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:36px}
-table{border-collapse:collapse;width:100%}
-th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:500;font-size:13px}
-td.n,th.n{text-align:right}
-small,.note{color:var(--mut);font-size:13px}
-section.lab{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:30px;padding:22px 0;border-bottom:1px solid var(--line)}
-section.lab:first-child{padding-top:0}
-label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}
-input,textarea,select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--text);font:inherit}
-textarea{resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:13px}
-button.run{margin-top:12px;margin-right:6px;padding:8px 16px;border:0;border-radius:5px;background:var(--acc);color:#fff;font:inherit;font-weight:600;cursor:pointer}
-button.run.alt{background:none;color:var(--acc);border:1px solid var(--acc)}
-.out{min-height:60px}.out .msg{padding:10px 14px;border-radius:6px;border-left:5px solid;margin-bottom:10px;font-weight:600}
-.msg.ok{border-color:var(--ok);background:var(--okbg)}.msg.warn{border-color:var(--warn);background:var(--warnbg)}.msg.bad{border-color:var(--bad);background:var(--badbg)}
-pre{margin:0;white-space:pre-wrap;font-size:13px;color:var(--mut)}
-.best{font-weight:650;color:var(--ok)}
-@media(max-width:760px){.hero,.cols,section.lab{grid-template-columns:1fr}.score{font-size:64px}}
-</style></head><body>
-<header>
-<h1>OS Performance Observatory</h1>
-<p class="sub">Live operating-system behaviour, mapped to the Operating Systems syllabus. Numbers only: no process names are collected or shown.</p>
-<nav><button data-t="live" class="on" onclick="tab('live')">Live status</button><button data-t="labs" onclick="tab('labs')">Algorithm labs</button></nav>
-</header>
-<main>
-<div id="live" class="tab">
- <div class="hero">
-  <div><div class="lbl">OS health score</div><div class="score" id="score">--</div>
-   <div class="bar"><i id="bar" style="width:0"></i></div><div class="lbl" id="upd">Collecting first samples...</div></div>
-  <div><h2>System messages</h2><ul class="msgs" id="msgs"><li class="info">Collecting first samples (about 5 seconds)...</li></ul></div>
- </div>
- <div class="strip" id="strip"></div>
- <div class="cols">
-  <div><h2>Scheduling comparison (Unit 2)</h2>
-   <table><thead><tr><th>Algorithm</th><th class="n">Avg waiting time</th></tr></thead><tbody id="sched"></tbody></table>
-   <p class="note">Built from the CPU time of the 12 most recently started processes (anonymous), assuming all arrive together. The lowest wait is highlighted.</p></div>
-  <div><h2>CPU mode split (Unit 1) and disk volumes (Unit 7)</h2>
-   <table><tbody id="modes"></tbody></table><p></p><table><tbody id="vols"></tbody></table></div>
- </div>
- <p class="note">Want to see an alert? Run the scripts in the <code>experiments</code> folder (see README), then watch the messages above.</p>
-</div>
-
-<div id="labs" class="tab" hidden>
- <section class="lab"><div><h2>Page replacement (Unit 5)</h2>
-  <label for="refs">Reference string</label><input id="refs" value="1 2 3 4 1 2 5 1 2 3 4 5">
-  <label for="frames">Frames</label><input id="frames" type="number" min="1" max="10" value="3">
-  <button class="run" onclick="runPages()">Compare algorithms</button><button class="run alt" onclick="runBelady()">Show Belady's anomaly</button></div>
-  <div class="out" id="o-pages"><small>Compares FIFO, LRU, Optimal and Clock on the same string.</small></div></section>
-
- <section class="lab"><div><h2>Disk scheduling (Unit 6)</h2>
-  <label for="reqs">Cylinder requests</label><input id="reqs" value="98 183 37 122 14 124 65 67">
-  <label for="head">Starting head position</label><input id="head" type="number" value="53">
-  <button class="run" onclick="runDisk()">Compare algorithms</button></div>
-  <div class="out" id="o-disk"><small>Total head movement for FCFS, SSTF, SCAN, C-SCAN and LOOK (200 cylinders).</small></div></section>
-
- <section class="lab"><div><h2>Banker's algorithm (Unit 4)</h2>
-  <label for="avail">Available resources</label><input id="avail" value="3 3 2">
-  <label for="bmax">Max demand (one row per process)</label><textarea id="bmax" rows="5">7 5 3
-3 2 2
-9 0 2
-2 2 2
-4 3 3</textarea>
-  <label for="balloc">Currently allocated</label><textarea id="balloc" rows="5">0 1 0
-2 0 0
-3 0 2
-2 1 1
-0 0 2</textarea>
-  <button class="run" onclick="runBanker()">Check safety</button></div>
-  <div class="out" id="o-banker"><small>Change the numbers (for example set Available to 0 0 0) to see an unsafe state.</small></div></section>
-
- <section class="lab"><div><h2>Dining philosophers (Unit 4)</h2>
-  <label for="dn">Philosophers</label><input id="dn" type="number" min="2" max="8" value="5">
-  <label for="ds">Strategy</label><select id="ds"><option value="naive">Naive: everyone takes the left fork first</option><option value="ordered">Fixed: always take the lower-numbered fork first</option></select>
-  <button class="run" onclick="runDining()">Run simulation</button></div>
-  <div class="out" id="o-dining"><small>The naive strategy deadlocks, and the alert also appears on the Live status tab.</small></div></section>
-
- <section class="lab"><div><h2>Race condition (Unit 3)</h2>
-  <label for="rt">Threads</label><input id="rt" type="number" min="1" max="8" value="4">
-  <label for="ri">Increments per thread</label><input id="ri" type="number" min="100" max="20000" value="5000">
-  <button class="run" onclick="runRace()">Run with and without a lock</button></div>
-  <div class="out" id="o-race"><small>Several threads update one shared counter. Without mutual exclusion, updates are lost.</small></div></section>
-</div>
-</main>
-<script>
-const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const mb=b=>(b/1048576).toFixed(1)+' MB/s', k=n=>n>=1000?(n/1000).toFixed(0)+'k':Math.round(n);
-function tab(n){document.querySelectorAll('.tab').forEach(e=>e.hidden=e.id!==n);document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===n));}
-async function poll(){
- try{
-  const s=await (await fetch('/api/status')).json(); if(!s.ready)return;
-  $('#score').textContent=Math.round(s.health);
-  const c=s.health>=75?'var(--ok)':s.health>=50?'var(--warn)':'var(--bad)';
-  $('#score').style.color=c;$('#bar').style.width=s.health+'%';$('#bar').style.background=c;
-  $('#upd').textContent='Updated '+new Date(s.ts*1000).toLocaleTimeString();
-  $('#msgs').innerHTML=s.alerts.length?s.alerts.map(a=>`<li class="${a.level}">${esc(a.message)}</li>`).join(''):'<li class="ok">All clear: no issues detected.</li>';
-  $('#strip').innerHTML=[['CPU',s.cpu.toFixed(0)+'%'],['Memory',s.mem.toFixed(0)+'%'],['Swap',s.swap.toFixed(0)+'%'],['Context switches/s',k(s.ctx)],['System calls/s',k(s.sysc)],['Disk read',mb(s.rd)],['Disk write',mb(s.wr)],['Processes',s.procs],['Threads',s.threads]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join('');
-  const w=s.sched||{},best=Object.keys(w).sort((a,b)=>w[a]-w[b])[0];
-  $('#sched').innerHTML=Object.keys(w).map(a=>`<tr><td class="${a===best?'best':''}">${a}</td><td class="n ${a===best?'best':''}">${w[a].toFixed(2)} s</td></tr>`).join('')||'<tr><td>Not enough data yet</td></tr>';
-  $('#modes').innerHTML=Object.entries(s.modes).map(([a,b])=>`<tr><td>${a==='kernel'?'Kernel (privileged)':a[0].toUpperCase()+a.slice(1)}</td><td class="n">${b.toFixed(1)}%</td></tr>`).join('');
-  $('#vols').innerHTML='<tr><th>Volume</th><th class="n">Used</th></tr>'+Object.entries(s.volumes).map(([a,b])=>`<tr><td>${esc(a)}</td><td class="n">${b.toFixed(0)}%</td></tr>`).join('');
- }catch(e){$('#msgs').innerHTML='<li class="bad">Cannot reach the monitor. Make sure app.py is still running.</li>'}
-}
-setInterval(poll,3000);poll();
-async function lab(kind,body){const r=await fetch('/api/lab/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return r.json();}
-const tbl=(h,rows)=>'<table><thead><tr>'+h.map((x,i)=>`<th class="${i?'n':''}">${x}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((x,i)=>`<td class="${i?'n':''}">${x}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
-const msg=(t,l)=>`<div class="msg ${l}">${esc(t)}</div>`;
-const err=(o,r)=>{if(r.error){$(o).innerHTML=msg(r.error,'warn');return true}};
-async function runPages(){const r=await lab('pages',{refs:$('#refs').value,frames:$('#frames').value});if(err('#o-pages',r))return;
- $('#o-pages').innerHTML=tbl(['Algorithm','Page faults','Hit ratio'],Object.entries(r).map(([a,v])=>[a,v.faults,v.hit_ratio+'%']));}
-async function runBelady(){const refs='1 2 3 4 1 2 5 1 2 3 4 5';$('#refs').value=refs;
- const a=await lab('pages',{refs,frames:3}),b=await lab('pages',{refs,frames:4});
- $('#frames').value=4;
- $('#o-pages').innerHTML=msg(`Belady's anomaly: FIFO has ${a.FIFO.faults} faults with 3 frames but ${b.FIFO.faults} faults with 4 frames. More memory made it worse.`,'warn')+tbl(['Algorithm','Faults (3 frames)','Faults (4 frames)'],Object.keys(a).map(x=>[x,a[x].faults,b[x].faults]));}
-async function runDisk(){const r=await lab('disk',{requests:$('#reqs').value,head:$('#head').value});if(err('#o-disk',r))return;
- const best=Object.keys(r).sort((a,b)=>r[a].movement-r[b].movement)[0];
- $('#o-disk').innerHTML=tbl(['Algorithm','Head movement','Service order'],Object.entries(r).map(([a,v])=>[a===best?`<span class="best">${a} (lowest)</span>`:a,v.movement,`<small>${v.order.join(', ')}</small>`]));}
-async function runBanker(){const r=await lab('banker',{available:$('#avail').value,max:$('#bmax').value,alloc:$('#balloc').value});if(err('#o-banker',r))return;
- $('#o-banker').innerHTML=msg(r.message,r.safe?'ok':'bad')+tbl(['Process','Remaining need'],r.need.map((n,i)=>['P'+i,n.join(', ')]));}
-async function runDining(){const r=await lab('dining',{n:$('#dn').value,strategy:$('#ds').value});if(err('#o-dining',r))return;
- $('#o-dining').innerHTML=msg(r.message,r.deadlock?'bad':'ok')+'<pre>'+esc(r.log.join('\n'))+'</pre>';}
-async function runRace(){$('#o-race').innerHTML='<small>Running...</small>';const r=await lab('race',{threads:$('#rt').value,iters:$('#ri').value});if(err('#o-race',r))return;
- const a=r.without_lock,b=r.with_lock;
- $('#o-race').innerHTML=(a.lost_updates>0?msg(`Race condition: ${a.lost_updates} updates were lost without a lock.`,'bad'):msg('No updates lost this time. Increase the thread count or increments and run again.','warn'))+
- tbl(['Version','Final counter','Lost updates','Time'],[['Without lock',a.result,a.lost_updates,a.seconds+' s'],['With lock',b.result,b.lost_updates,b.seconds+' s'],['Expected',r.expected,'','']])+'<p class="note">The lock makes the result correct, but costs time. That is the price of mutual exclusion.</p>';}
+:root{color-scheme:dark;--bg:#0b1020;--panel:#121b2e;--line:#293750;--text:#eef4ff;--muted:#a7b6cc;--accent:#80aaff;--good:#4bd4a0;--warn:#ffd166;--bad:#ff7785;--shadow:0 8px 26px #0002}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}body.light{color-scheme:light;--bg:#f3f6fb;--panel:#fff;--line:#d7dfeb;--text:#17243a;--muted:#56657a;--accent:#245ec7;--good:#087f5b;--warn:#8a5b00;--bad:#bd2436;--shadow:0 8px 26px #14213d0b}main{max-width:1440px;margin:auto;padding:24px clamp(12px,2.5vw,34px)}header,.heading,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{font-size:clamp(24px,3vw,34px);margin:0;letter-spacing:-.04em}h2{font-size:17px;margin:0}h3{font-size:14px;margin:0}.muted,.label,.foot{color:var(--muted)}.sub{color:var(--muted);margin-top:3px}.badge{border:1px solid var(--line);border-radius:99px;padding:6px 11px;display:inline-flex;align-items:center;gap:7px;max-width:100%;font-size:12px}.banner{margin:18px 0;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}.card{min-height:140px}.label{font-size:12px;display:flex;align-items:center;gap:5px}.info{display:inline-grid;place-items:center;width:16px;height:16px;border:1px solid var(--muted);border-radius:50%;font-size:10px;cursor:help;position:relative}.info:focus::after,.info:hover::after{content:attr(data-tip);position:absolute;z-index:4;top:22px;left:0;width:220px;padding:9px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:12px;font-weight:400}.value{font-size:clamp(24px,2.5vw,32px);font-weight:750;letter-spacing:-.04em;margin:8px 0 4px;font-variant-numeric:tabular-nums}.unit{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0}.track{height:6px;background:var(--line);border-radius:9px;overflow:hidden}.fill{height:100%;width:0;background:var(--accent);transition:width .3s}.layout{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:12px}.panel{margin-top:12px}.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chartbox{min-width:0}.chartbox canvas{display:block;width:100%;height:150px;margin-top:10px}.core-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:12px}.core .track{margin-top:5px}.core .row{font-size:12px}.modebar{display:flex;height:15px;border-radius:6px;overflow:hidden;background:var(--line);margin:10px 0}.modelegend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}button,input,select{font:inherit}button{border:1px solid var(--line);background:var(--accent);color:white;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:650}button.secondary{background:transparent;color:var(--text)}button.danger{background:var(--bad);border-color:var(--bad)}button:disabled{opacity:.5;cursor:not-allowed}input{width:90px;max-width:100%;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:8px}label{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.stress-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding:12px 0}.stress-row:first-of-type{border-top:0}.warning{color:var(--warn);font-weight:650}.alertlist{display:grid;gap:8px;margin-top:12px}.alert{border:1px solid var(--line);border-radius:9px;padding:10px 12px;overflow-wrap:anywhere}.alert.warn{border-color:#997a37}.alert.bad{border-color:var(--bad)}.alert small{display:block;color:var(--muted);margin-top:4px}table{width:100%;border-collapse:collapse;margin-top:12px;font-variant-numeric:tabular-nums}th,td{text-align:left;border-bottom:1px solid var(--line);padding:9px 7px;overflow-wrap:anywhere}th button{padding:3px 6px;background:transparent;color:var(--text);border:0}td.num,th.num{text-align:right}.tablewrap{overflow-x:auto}.statusok{color:var(--good)}.statusbad{color:var(--bad)}.foot{font-size:12px;margin:18px 0}.hide{display:none!important}@media(max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}}@media(max-width:560px){main{padding:14px 10px}.cards{gap:8px}.card,.panel{padding:12px}.card{min-height:125px}.charts{grid-template-columns:1fr}.chartbox canvas{height:130px}.value{font-size:25px}.stress-row{align-items:flex-start}}
+</style></head><body><main>
+<header><div><h1>OS Observatory</h1><div class="sub">Real measurements from the OS visible to this process. Measured values only.</div></div><div class="row"><span class="badge" id="connection" role="status">Connecting…</span><button class="secondary" id="pause" type="button">Pause updates</button><button class="secondary" id="theme" type="button" aria-label="Toggle light or dark theme">Light mode</button></div></header>
+<div class="banner"><strong id="environment">Detecting environment…</strong><span id="sampleInfo" class="muted">Waiting for first sample</span><span id="namePolicy" class="muted"></span></div>
+<section class="cards">
+<div class="card"><div class="label">CPU <span class="info" tabindex="0" data-tip="psutil.cpu_percent over the sampling interval. In Docker this is container-visible CPU usage, not full host utilization.">i</span></div><div class="value"><span id="cpu">—</span><span class="unit"> %</span></div><div class="track"><div id="cpuBar" class="fill"></div></div></div>
+<div class="card"><div class="label">Memory <span class="info" tabindex="0" data-tip="psutil.virtual_memory(). Used/total are OS-visible RAM; container limits may differ from host RAM.">i</span></div><div class="value"><span id="mem">—</span><span class="unit"> %</span></div><div id="memDetail" class="muted">— GB / — GB</div><div class="track"><div id="memBar" class="fill"></div></div></div>
+<div class="card"><div class="label">Swap / page file <span class="info" tabindex="0" data-tip="psutil.swap_memory().percent; availability and meaning vary by platform/container.">i</span></div><div class="value"><span id="swap">—</span><span class="unit"> %</span></div><div id="swapDetail" class="muted">— GB / — GB</div><div class="track"><div id="swapBar" class="fill"></div></div></div>
+<div class="card"><div class="label">Heuristic health <span class="info" tabindex="0" data-tip="Not an OS standard. Starts at 100; subtract 0.3 per CPU point above 80, 0.5 per memory point above 80, then 10 for each warning and 20 for each severe alert; clamp to 0–100.">i</span></div><div class="value"><span id="health">—</span><span class="unit"> / 100</span></div><div class="muted">Heuristic score (not an OS standard)</div><div class="track"><div id="healthBar" class="fill"></div></div></div>
+<div class="card"><div class="label">Disk read / write <span class="info" tabindex="0" data-tip="Rates derived from psutil.disk_io_counters() byte-counter deltas. Some platforms or containers expose incomplete counters.">i</span></div><div class="value" id="diskRead">—</div><div class="muted">Read rate</div><div class="value" id="diskWrite">—</div><div class="muted">Write rate</div></div>
+<div class="card"><div class="label">Network <span class="info" tabindex="0" data-tip="Rates from psutil.net_io_counters() byte-counter deltas; includes interfaces visible to this OS/container, possibly virtual interfaces.">i</span></div><div class="value" id="netDown">—</div><div class="muted">Download / received</div><div class="value" id="netUp">—</div><div class="muted">Upload / sent</div></div>
+<div class="card"><div class="label">Processes / threads <span class="info" tabindex="0" data-tip="Counts from psutil.process_iter(); access restrictions can hide some processes and process counts can change during collection.">i</span></div><div class="value"><span id="procs">—</span><span class="unit"> processes</span></div><div class="muted"><span id="threads">—</span> threads</div></div>
+<div class="card"><div class="label">Context switches / s <span class="info" tabindex="0" data-tip="Rate from psutil.cpu_stats().ctx_switches counter delta. Availability and scope depend on the OS/container.">i</span></div><div class="value" id="ctx">—</div><div class="muted">Switches per second</div></div>
+<div class="card"><div class="label">Uptime <span class="info" tabindex="0" data-tip="Current OS uptime derived from psutil.boot_time(). In containers this can represent the host kernel uptime.">i</span></div><div class="value" id="uptime">—</div><div class="muted" id="coresLoad">—</div></div>
+</section>
+<div class="layout"><section class="panel"><div class="heading"><h2>Live history · last ~10 minutes</h2><span class="muted">Real samples</span></div><div class="charts"><div class="chartbox"><h3>CPU (%)</h3><canvas id="chartCpu" aria-label="CPU history chart"></canvas></div><div class="chartbox"><h3>Memory (%)</h3><canvas id="chartMem" aria-label="Memory history chart"></canvas></div><div class="chartbox"><h3>Disk read / write (MB/s)</h3><canvas id="chartDisk" aria-label="Disk throughput history chart"></canvas></div><div class="chartbox"><h3>Network down / up (MB/s)</h3><canvas id="chartNet" aria-label="Network throughput history chart"></canvas></div></div></section>
+<section class="panel"><div class="heading"><h2>Alerts</h2><span id="alertCount" class="badge">0 active</span></div><div id="alerts" class="alertlist"><div class="muted">Collecting metrics…</div></div><h3 style="margin-top:18px">Recent alert events</h3><div id="events" class="alertlist"><span class="muted">No events yet.</span></div></section></div>
+<section class="panel"><div class="heading"><h2>CPU detail</h2><span class="muted">Per logical core</span></div><div id="cores" class="core-grid"></div><h3 style="margin-top:18px">CPU time by supported mode</h3><div id="modebar" class="modebar" aria-label="CPU mode breakdown"></div><div id="modelegend" class="modelegend"></div></section>
+<section class="panel"><div class="heading"><h2>Top processes</h2><span class="muted" id="processPolicy"></span></div><div class="tablewrap"><table><thead><tr><th>PID</th><th>Process</th><th class="num"><button id="sortCpu" type="button">CPU % ↕</button></th><th class="num"><button id="sortMem" type="button">RSS ↕</button></th></tr></thead><tbody id="processRows"><tr><td colspan="4" class="muted">Waiting for sample…</td></tr></tbody></table></div></section>
+<section class="panel"><div class="heading"><h2>Disk volumes</h2><span class="muted">Usage by mount point</span></div><div id="volumes" class="alertlist"><span class="muted">Waiting for sample…</span></div></section>
+<section class="panel"><div class="heading"><h2>Stress test</h2><span class="badge" id="stressStatus">Idle</span></div><p class="warning">Warning: This really loads the machine/container. Use only on a system you control.</p><div class="stress-row"><strong>CPU burn</strong><label for="cpuDuration">Duration (s)</label><input id="cpuDuration" type="number" min="1" max="120" value="30"><button type="button" data-stress="cpu">Start CPU burn</button></div><div class="stress-row"><strong>Memory growth</strong><label for="memorySize">Size (MB)</label><input id="memorySize" type="number" min="16" max="2048" value="256"><button type="button" data-stress="memory">Start memory growth</button></div><div class="stress-row"><strong>Disk I/O</strong><label for="diskDuration">Duration (s)</label><input id="diskDuration" type="number" min="1" max="120" value="30"><label for="diskSize">File (MB)</label><input id="diskSize" type="number" min="8" max="1024" value="128"><button type="button" data-stress="disk">Start disk I/O</button></div><div class="row"><span id="stressDetail" class="muted">One test at a time. Tests stop automatically at their limit.</span><button type="button" id="stopStress" class="danger">Stop test</button></div></section>
+<p class="foot">Metrics are collected locally by psutil. Docker can see only its Linux/container environment, not your complete Windows/macOS host. Process names are shown only when enabled. No telemetry or external CDNs are used.</p>
+</main><script>
+const $=id=>document.getElementById(id);let paused=false,themeLight=false,historyData=[],sortBy='cpu',lastState=null;const chartColors=['#72a5ff','#f5b84c'];
+function fmt(v,d=1){return Number.isFinite(Number(v))?Number(v).toFixed(d):'—'}function bytes(v){v=Number(v)||0;const units=['B/s','KB/s','MB/s','GB/s'];let i=0;while(v>=1024&&i<3){v/=1024;i++}return v.toFixed(i?1:0)+' '+units[i]}function rss(v){v=Number(v)||0;return (v/1048576).toFixed(1)+' MB'}function duration(s){s=Math.max(0,Math.floor(s||0));let d=Math.floor(s/86400);s%=86400;let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;return (d?d+'d ':'')+(h?h+'h ':'')+(m?m+'m ':'')+s+'s'}function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function metric(id,v){$(id).textContent=v;const b=$(id+'Bar');if(b)b.style.width=Math.max(0,Math.min(100,Number(v)||0))+'%'}function draw(id,series,max){const c=$(id),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=Math.max(200,r.width*dpr);c.height=Math.max(90,r.height*dpr);const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--line');ctx.lineWidth=1;for(let i=1;i<=3;i++){ctx.beginPath();ctx.moveTo(0,h*i/4);ctx.lineTo(w,h*i/4);ctx.stroke()}if(!historyData.length)return;series.forEach((s,si)=>{ctx.beginPath();ctx.strokeStyle=chartColors[si%chartColors.length];ctx.lineWidth=2;historyData.forEach((p,i)=>{let x=i/(Math.max(1,historyData.length-1))*w,y=h-5-(Math.max(0,Number(p[s.key])||0)/Math.max(1,max))*(h-12);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke()})}
+function charts(){draw('chartCpu',[{key:'cpu'}],100);draw('chartMem',[{key:'mem'}],100);draw('chartDisk',[{key:'rd'},{key:'wr'}],Math.max(1,...historyData.map(x=>(x.rd+x.wr)/1048576)));draw('chartNet',[{key:'net_down'},{key:'net_up'}],Math.max(1,...historyData.map(x=>(x.net_down+x.net_up)/1048576)))}
+function renderProcesses(s){let rows=[...(sortBy==='cpu'?s.top_cpu:s.top_memory)||[]].sort((a,b)=>sortBy==='cpu'?b.cpu_percent-a.cpu_percent:b.rss_bytes-a.rss_bytes);$('processRows').innerHTML=rows.length?rows.map(p=>`<tr><td>${p.pid}</td><td>${p.name?esc(p.name):'Hidden'}</td><td class="num">${fmt(p.cpu_percent)}%</td><td class="num">${rss(p.rss_bytes)}</td></tr>`).join(''):'<tr><td colspan="4" class="muted">No process details available.</td></tr>';}
+function render(s){lastState=s;metric('cpu',fmt(s.cpu));metric('mem',fmt(s.mem));metric('swap',fmt(s.swap));metric('health',Math.round(s.health));$('memDetail').textContent=`${fmt(s.mem_used_gb)} GB / ${fmt(s.mem_total_gb)} GB`; $('swapDetail').textContent=`${fmt(s.swap_used_gb)} GB / ${fmt(s.swap_total_gb)} GB`;$('diskRead').textContent=bytes(s.rd);$('diskWrite').textContent=bytes(s.wr);$('netDown').textContent=bytes(s.net_down);$('netUp').textContent=bytes(s.net_up);$('procs').textContent=s.procs;$('threads').textContent=s.threads;$('ctx').textContent=Math.round(s.ctx).toLocaleString();$('uptime').textContent=duration(s.uptime_seconds);$('coresLoad').textContent=`${s.cpu_cores} logical cores${s.load_average?' · load 1/5/15m: '+s.load_average.map(x=>fmt(x,2)).join(' / '):' · load average unavailable'}`;
+const env=s.environment==='docker-container'?`Monitoring: Docker container (Linux VM, not your Windows host)`:`Monitoring: this machine (${s.os_name} ${s.os_release})`;$('environment').textContent=env;$('namePolicy').textContent=s.show_process_names?'Process names: enabled':'Process names: hidden (SHOW_PROCESS_NAMES=0)';$('processPolicy').textContent=s.show_process_names?'Names visible':'Names hidden by configuration';$('connection').textContent='Connected';$('connection').className='badge statusok';$('sampleInfo').textContent=`Sample age ${Math.max(0,((Date.now()/1000)-s.ts)).toFixed(1)} s · sampling every ${s.sample_interval} s · ${new Date(s.ts*1000).toLocaleTimeString()}`;
+const alerts=s.alerts||[];$('alertCount').textContent=alerts.length+' active';$('alerts').innerHTML=alerts.length?alerts.map(a=>`<div class="alert ${a.level==='bad'?'bad':'warn'}"><strong>${esc(a.id.replaceAll('_',' '))}</strong><div>${esc(a.message)}</div><small>Started ${new Date((a.started_at||s.ts)*1000).toLocaleTimeString()}</small></div>`).join(''):'<div class="alert statusok">✓ No configured thresholds currently triggered.</div>';$('events').innerHTML=(s.alert_events||[]).length?s.alert_events.map(a=>`<div class="alert"><strong>${esc(a.event==='cleared'?'Cleared':'Started')}: ${esc(a.id?.replaceAll('_',' ')||'alert')}</strong><div>${esc(a.message)}</div><small>${new Date(a.time*1000).toLocaleTimeString()}</small></div>`).join(''):'<span class="muted">No alert events yet.</span>';
+$('cores').innerHTML=(s.per_core||[]).map((v,i)=>`<div class="core"><div class="row"><span>Core ${i}</span><b>${fmt(v)}%</b></div><div class="track"><div class="fill" style="width:${Math.max(0,Math.min(100,v))}%"></div></div></div>`).join('')||'<span class="muted">Per-core readings unavailable.</span>';const modes=Object.entries(s.modes||{});const colors=['#72a5ff','#4bd4a0','#f5b84c','#bd8cff','#ff7785','#63c7d9','#a4b2c5'];$('modebar').innerHTML=modes.map(([k,v],i)=>`<span title="${esc(k)} ${fmt(v)}%" style="width:${Math.max(0,v)}%;background:${colors[i%colors.length]}"></span>`).join('');$('modelegend').innerHTML=modes.map(([k,v],i)=>`<span><b style="color:${colors[i%colors.length]}">●</b> ${esc(k)} ${fmt(v)}%</span>`).join('');$('volumes').innerHTML=Object.entries(s.volumes||{}).map(([name,v])=>`<div class="alert"><div class="row"><strong>${esc(name)}</strong><span>${fmt(v.percent)}% used</span></div><div class="track"><div class="fill" style="width:${Math.min(100,v.percent)}%"></div></div><small class="muted">${(v.used_bytes/1e9).toFixed(1)} / ${(v.total_bytes/1e9).toFixed(1)} GB</small></div>`).join('')||'<span class="muted">No disk volumes exposed.</span>';renderProcesses(s);renderStress(s.stress);}
+function renderStress(s){if(!s)return;$('stressStatus').textContent=s.active?`${s.kind} · ${s.remaining_seconds}s remaining`:'Idle';$('stressDetail').textContent=s.active?`${s.kind} test running · auto-stops at its configured limit.`:(s.enabled?'No stress test running.':'Stress tests disabled by configuration.');document.querySelectorAll('[data-stress]').forEach(b=>b.disabled=!s.enabled||s.active);$('stopStress').disabled=!s.active;}
+async function poll(){if(paused)return;try{const [sr,hr]=await Promise.all([fetch('/api/status',{cache:'no-store'}),fetch('/api/history',{cache:'no-store'})]);if(!sr.ok||!hr.ok)throw Error('HTTP error');const s=await sr.json();historyData=await hr.json();if(!s.ready){$('connection').textContent='Starting sampler…';return}render(s);charts()}catch(e){$('connection').textContent='Connection lost';$('connection').className='badge statusbad';$('environment').textContent='Monitor unavailable — check the app process';$('status')?.classList.add('hide')}}
+$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'Resume updates':'Pause updates';if(!paused)poll()};$('theme').onclick=()=>{themeLight=!themeLight;document.body.classList.toggle('light',themeLight);$('theme').textContent=themeLight?'Dark mode':'Light mode';charts()};$('sortCpu').onclick=()=>{sortBy='cpu';if(lastState)renderProcesses(lastState)};$('sortMem').onclick=()=>{sortBy='mem';if(lastState)renderProcesses(lastState)};
+function num(id,min,max){const v=Number($(id).value);if(!Number.isInteger(v)||v<min||v>max)throw Error(`Enter a whole number from ${min} to ${max}.`);return v}
+document.querySelectorAll('[data-stress]').forEach(b=>b.onclick=async()=>{try{let kind=b.dataset.stress,body={};if(kind==='cpu')body.duration=num('cpuDuration',1,120);if(kind==='memory')body.size_mb=num('memorySize',16,2048);if(kind==='disk'){body.duration=num('diskDuration',1,120);body.size_mb=num('diskSize',8,1024)}let r=await fetch('/api/stress/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let d=await r.json();if(!r.ok)throw Error(d.error||'Could not start stress test');$('stressDetail').textContent='Started '+kind+' test.';poll()}catch(e){$('stressDetail').textContent=e.message}});$('stopStress').onclick=async()=>{try{await fetch('/api/stress/stop',{method:'POST'});poll()}catch(e){$('stressDetail').textContent='Could not stop test.'}};
+poll();fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).then(c=>setInterval(poll,Math.max(1000,Number(c.sample_interval||5)*1000))).catch(()=>setInterval(poll,5000));window.addEventListener('resize',charts);
 </script></body></html>

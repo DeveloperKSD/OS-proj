@@ -1,16 +1,31 @@
 @echo off
 cd /d "%~dp0"
-echo [1/3] Setting up Python environment...
-if not exist .venv ( python -m venv .venv )
-call .venv\Scripts\activate
-pip install -q -r requirements.txt
-echo [2/3] Starting the Observatory app in a new window...
-start "OS Observatory (keep open)" cmd /k "call .venv\Scripts\activate && python app.py"
-echo [3/3] Starting Prometheus + Grafana (Docker)...
-docker compose up -d
+title OS Observatory - Docker launcher
+where docker >nul 2>nul
+if errorlevel 1 (
+  echo ERROR: Docker Desktop is not installed or Docker is not in PATH.
+  pause
+  exit /b 1
+)
+docker info >nul 2>nul
+if errorlevel 1 (
+  echo ERROR: Open Docker Desktop and wait until its engine is running, then retry.
+  pause
+  exit /b 1
+)
+echo Building and starting OS Observatory containers...
+docker compose up --build -d
+if errorlevel 1 (
+  echo Startup failed. Check the error above.
+  pause
+  exit /b 1
+)
+echo Opening the app in your browser...
+timeout /t 3 /nobreak >nul
+start "" "http://localhost:5050"
 echo.
-echo Ready:
-echo   Live UI        http://localhost:5050
-echo   Grafana        http://localhost:3000   (login: admin / admin)
-echo   Prometheus     http://localhost:9090
+echo App:        http://localhost:5050
+echo Grafana:    http://localhost:3000
+echo Prometheus: http://localhost:9090/targets
+echo Containers keep running after this window closes.
 pause

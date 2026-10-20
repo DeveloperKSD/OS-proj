@@ -1,20 +1,18 @@
-"""Simulates a memory leak (grows ~25 MB every 4 s) so the 'Possible memory leak' message appears.
-Usage: python memory_leak.py [max_MB]   (default 1000 MB, then it frees everything and exits)"""
-import sys, time
+"""Allocate and touch memory gradually to demonstrate real RSS growth."""
+import sys, time, signal
+signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
 
-limit = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
-hold, mb = [], 0
-print(f"Leaking up to {limit} MB. Press Ctrl+C to stop early.")
-try:
-    while mb < limit:
-        hold.append(bytearray(25 * 1024 * 1024))
-        for i in range(0, len(hold[-1]), 4096):
-            hold[-1][i] = 1          # touch pages so they really count
-        mb += 25
-        print(f"  allocated {mb} MB", end="\r")
-        time.sleep(4)
-    print("\nHolding for 20 s, then releasing...")
-    time.sleep(20)
-except KeyboardInterrupt:
-    pass
-print("Released.")
+def main() -> None:
+    limit=max(16,min(2048,int(sys.argv[1]) if len(sys.argv)>1 else 256))
+    hold=[]; allocated=0
+    try:
+        while allocated < limit:
+            amount=min(16,limit-allocated); block=bytearray(amount*1024*1024)
+            for i in range(0,len(block),4096): block[i]=1
+            hold.append(block); allocated+=amount; time.sleep(2)
+        time.sleep(45)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        hold.clear()
+if __name__=='__main__': main()

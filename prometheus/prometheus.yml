@@ -1,13 +1,7 @@
 global:
   scrape_interval: 5s
-
 scrape_configs:
-  # Our own exporter (app.py on the host, port 8000) - required
-  - job_name: 'os-observatory'
+  - job_name: os-observatory
+    scrape_interval: 5s
     static_configs:
-      - targets: ['host.docker.internal:8000']
-
-  # OPTIONAL: Windows Exporter (extra metrics). Shows DOWN if not installed - that is fine.
-  - job_name: 'windows'
-    static_configs:
-      - targets: ['host.docker.internal:9182']
+      - targets: ['app:8000']

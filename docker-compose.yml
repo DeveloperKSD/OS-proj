@@ -1,27 +1,71 @@
 services:
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: obs-prometheus
-    ports: ["9090:9090"]
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    extra_hosts: ["host.docker.internal:host-gateway"]
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: obs-grafana
-    ports: ["3000:3000"]
+  app:
+    build: .
+    container_name: os-observatory-app
     environment:
-      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/os-observatory.json
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-    volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
-      - grafana-data:/var/lib/grafana
-    depends_on: [prometheus]
+      UI_PORT: 5050
+      METRICS_PORT: 8000
+      SAMPLE_INTERVAL: ${SAMPLE_INTERVAL:-5}
+      ENABLE_METRICS: ${ENABLE_METRICS:-1}
+      ENABLE_STRESS: ${ENABLE_STRESS:-1}
+      SHOW_PROCESS_NAMES: ${SHOW_PROCESS_NAMES:-0}
+      ALERT_CPU_PERCENT: ${ALERT_CPU_PERCENT:-90}
+      ALERT_CPU_DURATION_SECONDS: ${ALERT_CPU_DURATION_SECONDS:-10}
+      ALERT_MEMORY_PERCENT: ${ALERT_MEMORY_PERCENT:-90}
+      ALERT_SWAP_PERCENT: ${ALERT_SWAP_PERCENT:-60}
+      ALERT_CONTEXT_SWITCHES_PER_S: ${ALERT_CONTEXT_SWITCHES_PER_S:-150000}
+      ALERT_DISK_BYTES_PER_S: ${ALERT_DISK_BYTES_PER_S:-20971520}
+      ALERT_DISK_DURATION_SECONDS: ${ALERT_DISK_DURATION_SECONDS:-10}
+      ALERT_DISK_USED_PERCENT: ${ALERT_DISK_USED_PERCENT:-90}
+      ALERT_LEAK_WINDOW_SECONDS: ${ALERT_LEAK_WINDOW_SECONDS:-40}
+      ALERT_LEAK_GROWTH_MB: ${ALERT_LEAK_GROWTH_MB:-80}
+    ports:
+      - "127.0.0.1:5050:5050"
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5050/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 4s
+      retries: 5
+      start_period: 8s
     restart: unless-stopped
-
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: obs-prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:9090/-/healthy >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:11.3.1
+    container_name: obs-grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me-now}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 volumes:
   grafana-data:
