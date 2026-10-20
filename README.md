@@ -2,13 +2,14 @@
 
 A real-time system monitoring dashboard. It samples live OS metrics with `psutil`, shows them in a web UI, raises threshold-based alerts, exports Prometheus metrics, and ships with a Grafana dashboard and bounded stress tests for generating load.
 
-#IMAGES
+## IMAGES
 
 
-
-<img width="1363" height="610" alt="image" src="https://github.com/user-attachments/assets/620b47a0-2270-4f2d-8d17-fa1215af273a" />
 Grafana Dashboard alonside other metrics
+<img width="1363" height="610" alt="image" src="https://github.com/user-attachments/assets/620b47a0-2270-4f2d-8d17-fa1215af273a" />
 
+
+APP UI
 <img width="1068" height="511" alt="image" src="https://github.com/user-attachments/assets/83f17b12-ff2f-4922-8a8e-459362e0a185" />
 
 <img width="1207" height="618" alt="image" src="https://github.com/user-attachments/assets/388c77b3-2a41-4a20-86d8-0136370b4771" />
@@ -16,12 +17,12 @@ Grafana Dashboard alonside other metrics
 <img width="992" height="516" alt="image" src="https://github.com/user-attachments/assets/de9cdd14-b06f-4d46-ad91-c4c294afc3c8" />
 
 <img width="1004" height="255" alt="image" src="https://github.com/user-attachments/assets/840c82be-450b-4e2e-8094-dd7acd53c004" />
-APP UI
 
 
 
-<img width="1242" height="545" alt="image" src="https://github.com/user-attachments/assets/d14d1d2d-4d39-45a8-b50d-a7abcfb58adc" />
 Docker
+<img width="1242" height="545" alt="image" src="https://github.com/user-attachments/assets/d14d1d2d-4d39-45a8-b50d-a7abcfb58adc" />
+
 
 
 ## Features
