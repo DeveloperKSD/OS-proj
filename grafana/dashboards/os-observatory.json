@@ -1,0 +1,524 @@
+{
+ "uid": "os-observatory",
+ "title": "OS Performance Observatory",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "5s",
+ "time": {
+  "from": "now-15m",
+  "to": "now"
+ },
+ "tags": [
+  "os-course"
+ ],
+ "panels": [
+  {
+   "id": 1,
+   "type": "gauge",
+   "title": "OS health score",
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 5,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_health_score",
+     "legendFormat": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "min": 0,
+     "max": 100,
+     "unit": "none",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 50
+       },
+       {
+        "color": "green",
+        "value": 75
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "showThresholdMarkers": true
+   }
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "System messages: OK or ACTIVE",
+   "gridPos": {
+    "x": 5,
+    "y": 0,
+    "w": 19,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_alert_active",
+     "legendFormat": "{{alert}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "OK",
+         "color": "green"
+        },
+        "1": {
+         "text": "ACTIVE",
+         "color": "red"
+        }
+       }
+      }
+     ],
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "colorMode": "background",
+    "textMode": "value_and_name",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 3,
+   "type": "timeseries",
+   "title": "Unit 1: CPU time by mode (user vs kernel)",
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_cpu_mode_percent",
+     "legendFormat": "{{mode}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "fillOpacity": 40,
+      "lineWidth": 2,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "max": 100,
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 4,
+   "type": "timeseries",
+   "title": "Unit 1: System calls and interrupts per second",
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_syscalls_per_s",
+     "legendFormat": "system calls",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    },
+    {
+     "refId": "B",
+     "expr": "os_interrupts_per_s",
+     "legendFormat": "interrupts",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     }
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 5,
+   "type": "timeseries",
+   "title": "Unit 2: Context switches per second",
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 8,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_ctx_switches_per_s",
+     "legendFormat": "context switches",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     }
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 6,
+   "type": "timeseries",
+   "title": "Unit 2: Processes and threads",
+   "gridPos": {
+    "x": 8,
+    "y": 16,
+    "w": 8,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_process_count",
+     "legendFormat": "processes",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    },
+    {
+     "refId": "B",
+     "expr": "os_thread_count",
+     "legendFormat": "threads",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     }
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 7,
+   "type": "timeseries",
+   "title": "Unit 2: Avg waiting time by scheduling algorithm",
+   "gridPos": {
+    "x": 16,
+    "y": 16,
+    "w": 8,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sched_avg_waiting_seconds",
+     "legendFormat": "{{algorithm}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     }
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 8,
+   "type": "timeseries",
+   "title": "Unit 5: Memory and swap used",
+   "gridPos": {
+    "x": 0,
+    "y": 24,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_mem_percent",
+     "legendFormat": "memory",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    },
+    {
+     "refId": "B",
+     "expr": "os_swap_percent",
+     "legendFormat": "swap",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     },
+     "max": 100,
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 9,
+   "type": "timeseries",
+   "title": "Unit 6: Disk read and write throughput",
+   "gridPos": {
+    "x": 12,
+    "y": 24,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_disk_read_bytes_per_s",
+     "legendFormat": "read",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    },
+    {
+     "refId": "B",
+     "expr": "os_disk_write_bytes_per_s",
+     "legendFormat": "write",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     }
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Unit 7: Volume usage",
+   "gridPos": {
+    "x": 0,
+    "y": 32,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_disk_used_percent",
+     "legendFormat": "{{volume}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     },
+     "max": 100,
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {}
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "CPU utilisation",
+   "gridPos": {
+    "x": 12,
+    "y": 32,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prom"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "os_cpu_percent",
+     "legendFormat": "CPU",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prom"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 2
+     },
+     "max": 100,
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {}
+  }
+ ]
+}
