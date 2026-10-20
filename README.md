@@ -3,6 +3,9 @@
 A real-time system monitoring dashboard. It samples live OS metrics with `psutil`, shows them in a web UI, raises threshold-based alerts, exports Prometheus metrics, and ships with a Grafana dashboard and bounded stress tests for generating load.
 
 #IMAGES
+
+
+
 <img width="1363" height="610" alt="image" src="https://github.com/user-attachments/assets/620b47a0-2270-4f2d-8d17-fa1215af273a" />
 Grafana Dashboard alonside other metrics
 
